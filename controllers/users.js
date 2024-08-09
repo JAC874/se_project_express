@@ -1,8 +1,6 @@
 const User = require("../models/user");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
-//GET /users
-
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))

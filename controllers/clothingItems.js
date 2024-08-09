@@ -20,7 +20,7 @@ const createItem = (req, res) => {
     return res.status(400).send({ message: "All fields are required" });
   }
 
-  ClothingItem.create({ name, weather, imageUrl, owner })
+  return ClothingItem.create({ name, weather, imageUrl, owner })
     .then((item) => res.status(201).send({ data: item }))
     .catch((err) => {
       if (err.name === "ValidationError") {
