@@ -1,7 +1,6 @@
 const ClothingItem = require("../models/clothingItem");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
-//Get Items
 const getItems = (req, res) => {
   console.log(req.user._id);
   ClothingItem.find({})
@@ -14,7 +13,6 @@ const getItems = (req, res) => {
     });
 };
 
-//CreateItem
 const createItem = (req, res) => {
   const { name, weather, imageUrl } = req.body;
   const owner = req.user._id;
@@ -37,7 +35,6 @@ const createItem = (req, res) => {
     });
 };
 
-//DeleteItem
 const deleteItem = (req, res) => {
   const { itemId } = req.params;
 
@@ -62,7 +59,6 @@ const deleteItem = (req, res) => {
     });
 };
 
-//LikeItem
 const likeItem = (req, res) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
@@ -88,7 +84,7 @@ const likeItem = (req, res) => {
     });
 };
 
-//DisikeItem
+
 const dislikeItem = (req, res) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
