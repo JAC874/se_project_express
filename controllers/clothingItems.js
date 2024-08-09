@@ -2,9 +2,8 @@ const ClothingItem = require("../models/clothingItem");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
 const getItems = (req, res) => {
-  console.log(req.user._id);
   ClothingItem.find({})
-    .then((items) => res.status(200).send(items))
+    .then((items) => res.status(200).send({ data: items }))
     .catch((err) => {
       console.error(err);
       res
@@ -66,7 +65,7 @@ const likeItem = (req, res) => {
     { new: true }
   )
     .orFail()
-    .then((item) => res.json(item))
+    .then((item) => res.status(200).send({ data: item }))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError")
@@ -80,10 +79,9 @@ const likeItem = (req, res) => {
       }
       return res
         .status(ERROR_CODES.SERVER_ERROR)
-        .json({ message: ERROR_MESSAGES.SERVER_ERROR });
+        .send({ message: ERROR_MESSAGES.SERVER_ERROR });
     });
 };
-
 
 const dislikeItem = (req, res) => {
   ClothingItem.findByIdAndUpdate(
@@ -92,13 +90,13 @@ const dislikeItem = (req, res) => {
     { new: true }
   )
     .orFail()
-    .then((item) => res.json(item))
+    .then((item) => res.status(200).send({ data: item }))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError")
         return res
           .status(ERROR_CODES.NOT_FOUND)
-          .json({ message: ERROR_MESSAGES.NOT_FOUND });
+          .send({ message: ERROR_MESSAGES.NOT_FOUND });
       if (err.name === "CastError") {
         return res
           .status(ERROR_CODES.BAD_REQUEST)
@@ -106,7 +104,7 @@ const dislikeItem = (req, res) => {
       }
       return res
         .status(ERROR_CODES.SERVER_ERROR)
-        .json({ message: ERROR_MESSAGES.SERVER_ERROR });
+        .send({ message: ERROR_MESSAGES.SERVER_ERROR });
     });
 };
 
