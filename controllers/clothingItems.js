@@ -17,7 +17,9 @@ const createItem = (req, res) => {
   const owner = req.user._id;
 
   if (!name || !weather || !imageUrl) {
-    return res.status(400).send({ message: "All fields are required" });
+    return res
+      .status(ERROR_CODES.BAD_REQUEST)
+      .send({ message: ERROR_MESSAGES.BAD_REQUEST });
   }
 
   return ClothingItem.create({ name, weather, imageUrl, owner })
