@@ -8,7 +8,7 @@ const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 const createUser = async (req, res) => {
   const { name, avatar, email, password } = req.body;
 
-  // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!email || !password) {
     return res
