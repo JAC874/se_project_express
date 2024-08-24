@@ -1,7 +1,7 @@
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const validator = require("validator");
-const bcrypt = require("bcryptjs");
 const { JWT_SECRET } = require("../utils/config");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
@@ -69,6 +69,8 @@ const createUser = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("Login request received with email:", email); // Log incoming email
+
   if (!email || !password) {
     return res
       .status(ERROR_CODES.BAD_REQUEST)
@@ -83,17 +85,23 @@ const login = async (req, res) => {
 
   try {
     const user = await User.findUserByCredentials(email, password);
+    console.log("User found:", user); // Log the found user
+
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
     return res.status(200).send({ token });
   } catch (err) {
-    console.log(err);
+    if (err.statusCode) {
+      // Check if error has a status code
+      return res.status(err.statusCode).send({ message: err.message });
+    }
 
-    if (err.code === 401) {
+    // Handle validation errors
+    if (err.name === "ValidationError") {
       return res
-        .status(ERROR_CODES.AUTHORIZATION_ERROR)
-        .send({ message: ERROR_MESSAGES.AUTHORIZATION_ERROR });
+        .status(ERROR_CODES.BAD_REQUEST)
+        .send({ message: ERROR_MESSAGES.BAD_REQUEST });
     }
 
     return res
