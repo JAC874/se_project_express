@@ -1,14 +1,14 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/user");
 const validator = require("validator");
+const User = require("../models/user");
 const { JWT_SECRET } = require("../utils/config");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
 const createUser = async (req, res) => {
   const { name, avatar, email, password } = req.body;
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!email || !password) {
     return res
@@ -69,8 +69,6 @@ const createUser = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("Login request received with email:", email); // Log incoming email
-
   if (!email || !password) {
     return res
       .status(ERROR_CODES.BAD_REQUEST)
@@ -85,7 +83,6 @@ const login = async (req, res) => {
 
   try {
     const user = await User.findUserByCredentials(email, password);
-    console.log("User found:", user); // Log the found user
 
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
