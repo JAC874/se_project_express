@@ -87,7 +87,7 @@ const login = async (req, res) => {
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    return res.status(200).send({ token });
+    return res.send({ token });
   } catch (err) {
     if (err.statusCode) {
       // Check if error has a status code
@@ -113,7 +113,7 @@ const getCurrentUser = (req, res) => {
   User.findById(userId)
     .select("-password")
     .orFail()
-    .then((user) => res.status(200).send(user))
+    .then((user) => res.send(user))
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {

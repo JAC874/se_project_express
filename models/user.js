@@ -43,7 +43,7 @@ userSchema.statics.findUserByCredentials = async function (email, password) {
 
   if (!user) {
     const error = new Error("Incorrect email or password");
-    error.statusCode = ERROR_CODES.BAD_REQUEST; // Set status code for non-existent user
+    error.statusCode = ERROR_CODES.AUTHORIZATION_ERROR; // Set status code for non-existent user
     throw error;
   }
 
@@ -51,7 +51,7 @@ userSchema.statics.findUserByCredentials = async function (email, password) {
 
   if (!isMatch) {
     const error = new Error("Incorrect email or password");
-    error.statusCode = ERROR_CODES.BAD_REQUEST; // Set status code for incorrect password
+    error.statusCode = ERROR_CODES.AUTHORIZATION_ERROR; // Set status code for incorrect password
     throw error;
   }
 

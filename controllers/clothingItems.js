@@ -3,7 +3,7 @@ const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
 
 const getItems = (req, res) => {
   ClothingItem.find({})
-    .then((items) => res.status(200).send({ data: items }))
+    .then((items) => res.send({ data: items }))
     .catch((err) => {
       console.error(err);
       res
@@ -53,7 +53,7 @@ const deleteItem = async (req, res) => {
     }
 
     await ClothingItem.findByIdAndDelete(itemId);
-    return res.status(200).send({ message: "Item successfully deleted" });
+    return res.send({ message: "Item successfully deleted" });
   } catch (err) {
     console.error("deleteItem error name: ", err.name);
     const statusCode = err.statusCode || 500;
@@ -76,7 +76,7 @@ const likeItem = (req, res) => {
     { new: true }
   )
     .orFail()
-    .then((item) => res.status(200).send({ data: item }))
+    .then((item) => res.send({ data: item }))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError")
@@ -101,7 +101,7 @@ const dislikeItem = (req, res) => {
     { new: true }
   )
     .orFail()
-    .then((item) => res.status(200).send({ data: item }))
+    .then((item) => res.send({ data: item }))
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError")
