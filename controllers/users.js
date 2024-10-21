@@ -4,31 +4,27 @@ const validator = require("validator");
 const User = require("../models/user");
 const { JWT_SECRET } = require("../utils/config");
 const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
+const BadRequestError = require("../errors/bad-request-err");
+const ConflictError = require("../errors/conflict-err");
+const NotFoundError = require("../errors/not-found-err");
+const UnauthorizedError = require("../errors/unauthorized-err");
 
-const createUser = async (req, res) => {
+const createUser = async (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   if (!email || !password) {
-    return res
-      .status(ERROR_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+    next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
   }
 
-  if (!emailRegex.test(email)) {
-    return res
-      .status(ERROR_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.INVALID_EMAIL });
+  if (!validator.isEmail(email)) {
+    next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
   }
 
   try {
     // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(ERROR_CODES.EMAIL_EXISTS)
-        .send({ message: ERROR_MESSAGES.EMAIL_EXISTS });
+      return next(new ConflictError(ERROR_MESSAGES.EMAIL_EXISTS));
     }
 
     // Hash password
@@ -48,37 +44,25 @@ const createUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     if (err.name === "ValidationError") {
-      return res
-        .status(ERROR_CODES.BAD_REQUEST)
-        .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+      return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
     }
-
     // Handle MongoDB duplicate error
     if (err.code === 11000) {
-      return res
-        .status(ERROR_CODES.BAD_REQUEST)
-        .send({ message: ERROR_MESSAGES.EMAIL_EXISTS });
+      return next(new ConflictError(ERROR_MESSAGES.EMAIL_EXISTS));
     }
-
-    return res
-      .status(ERROR_CODES.SERVER_ERROR)
-      .send({ message: ERROR_MESSAGES.SERVER_ERROR });
+    next(err);
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res
-      .status(ERROR_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+    return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
   }
 
   if (!validator.isEmail(email)) {
-    return res
-      .status(ERROR_CODES.BAD_REQUEST)
-      .send({ message: ERROR_MESSAGES.INVALID_EMAIL });
+    return next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
   }
 
   try {
@@ -90,49 +74,31 @@ const login = async (req, res) => {
     return res.send({ token });
   } catch (err) {
     if (err.statusCode) {
-      // Check if error has a status code
-      return res.status(err.statusCode).send({ message: err.message });
+      return next(err);
     }
-
-    // Handle validation errors
     if (err.name === "ValidationError") {
-      return res
-        .status(ERROR_CODES.BAD_REQUEST)
-        .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+      return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
     }
-
-    return res
-      .status(ERROR_CODES.SERVER_ERROR)
-      .send({ message: ERROR_MESSAGES.SERVER_ERROR });
+    return next(err);
   }
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
-  console.log(userId);
+
   User.findById(userId)
     .select("-password")
-    .orFail()
+    .orFail(() => new NotFoundError(ERROR_MESSAGES.NOT_FOUND))
     .then((user) => res.send(user))
     .catch((err) => {
-      console.error(err);
       if (err.name === "CastError") {
-        return res
-          .status(ERROR_CODES.BAD_REQUEST)
-          .send({ message: ERROR_MESSAGES.BAD_REQUEST });
+        return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
       }
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(ERROR_CODES.NOT_FOUND)
-          .send({ message: ERROR_MESSAGES.NOT_FOUND });
-      }
-      return res
-        .status(ERROR_CODES.SERVER_ERROR)
-        .send({ message: ERROR_MESSAGES.SERVER_ERROR });
+      return next(err);
     });
 };
 
-const updateUser = (req, res) => {
+const updateUser = (req, res, next) => {
   const userId = req.user._id;
   const { name, avatar } = req.body;
 
@@ -143,27 +109,15 @@ const updateUser = (req, res) => {
   User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        return res.status(ERROR_CODES.NOT_FOUND).json({
-          status: "error",
-          message: ERROR_MESSAGES.NOT_FOUND,
-        });
+        return next(new NotFoundError(ERROR_MESSAGES.NOT_FOUND));
       }
-      return res.status(200).json({
-        data: user,
-      });
+      return res.status(200).json({ data: user });
     })
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        return res.status(ERROR_CODES.BAD_REQUEST).json({
-          status: "error",
-          message: "Validation Error",
-          errors: err.errors,
-        });
+      if (err.message === "Incorrect email or password") {
+        return next(new UnauthorizedError("Incorrect email or password!"));
       }
-      return res.status(ERROR_CODES.SERVER_ERROR).json({
-        status: "error",
-        message: ERROR_MESSAGES.SERVER_ERROR,
-      });
+      return next(err);
     });
 };
 
