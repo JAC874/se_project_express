@@ -13,11 +13,11 @@ const createUser = async (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
   if (!email || !password) {
-    next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
+    return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
   }
 
   if (!validator.isEmail(email)) {
-    next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
+    return next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
   }
 
   try {
