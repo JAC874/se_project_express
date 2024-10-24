@@ -25,3 +25,12 @@ This project applies modern concepts to create a robust back-end server optimize
 - Middleware
 - Environment Variables
 - Configuration Files
+- Centralized Error handling
+- Joi, Celebrate, and Validator packages
+- Loggers using Winston package
+- Google Cloud Deployment
+
+# Domain:
+
+https://wtwr.pixelfucker.com
+https://www.wtwr.pixelfucker.com
