@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const validator = require("validator");
 const User = require("../models/user");
 const { JWT_SECRET } = require("../utils/config");
-const { ERROR_CODES, ERROR_MESSAGES } = require("../utils/errors");
+const { ERROR_MESSAGES } = require("../utils/errors");
 const BadRequestError = require("../errors/bad-request-err");
 const ConflictError = require("../errors/conflict-err");
 const NotFoundError = require("../errors/not-found-err");
@@ -12,25 +12,27 @@ const UnauthorizedError = require("../errors/unauthorized-err");
 const createUser = async (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
+  // Check if email or password is missing
   if (!email || !password) {
     return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
   }
 
+  // Validate email format
   if (!validator.isEmail(email)) {
     return next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
   }
 
   try {
-    // Check for existing user
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(new ConflictError(ERROR_MESSAGES.EMAIL_EXISTS));
     }
 
-    // Hash password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with hashed password
+    // Create the user with hashed password
     const newUser = await User.create({
       name,
       avatar,
@@ -38,6 +40,7 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
+    // Exclude the password from the response
     const { password: pwd, ...userWithoutPassword } = newUser.toObject();
 
     return res.status(201).send({ data: userWithoutPassword });
@@ -46,46 +49,49 @@ const createUser = async (req, res, next) => {
     if (err.name === "ValidationError") {
       return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
     }
-    // Handle MongoDB duplicate error
+    // Handle MongoDB duplicate key error
     if (err.code === 11000) {
       return next(new ConflictError(ERROR_MESSAGES.EMAIL_EXISTS));
     }
-    next(err);
+    return next(err);
   }
 };
 
 const login = async (req, res, next) => {
   const { email, password } = req.body;
 
+  // Check if email or password is missing
   if (!email || !password) {
     return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
   }
 
+  // Validate email format
   if (!validator.isEmail(email)) {
     return next(new BadRequestError(ERROR_MESSAGES.INVALID_EMAIL));
   }
 
   try {
+    // Custom method for checking credentials
     const user = await User.findUserByCredentials(email, password);
 
+    // Generate JWT
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
+
     return res.send({ token });
   } catch (err) {
     if (err.statusCode) {
       return next(err);
     }
-    if (err.name === "ValidationError") {
-      return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
-    }
-    return next(err);
+    return next(new UnauthorizedError(ERROR_MESSAGES.UNAUTHORIZED));
   }
 };
 
 const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
 
+  // Find the user by ID and exclude the password field
   User.findById(userId)
     .select("-password")
     .orFail(() => new NotFoundError(ERROR_MESSAGES.NOT_FOUND))
@@ -102,10 +108,12 @@ const updateUser = (req, res, next) => {
   const userId = req.user._id;
   const { name, avatar } = req.body;
 
+  // Prepare the updates object
   const updates = {};
   if (name) updates.name = name;
   if (avatar) updates.avatar = avatar;
 
+  // Update the user and validate the changes
   User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
@@ -114,8 +122,8 @@ const updateUser = (req, res, next) => {
       return res.status(200).json({ data: user });
     })
     .catch((err) => {
-      if (err.message === "Incorrect email or password") {
-        return next(new UnauthorizedError("Incorrect email or password!"));
+      if (err.name === "ValidationError") {
+        return next(new BadRequestError(ERROR_MESSAGES.BAD_REQUEST));
       }
       return next(err);
     });
