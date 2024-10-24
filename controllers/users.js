@@ -74,11 +74,8 @@ const login = async (req, res, next) => {
     // Custom method for checking credentials
     const user = await User.findUserByCredentials(email, password);
 
-    // Destructure _id from user
-    const { _id } = user;
-
     // Generate JWT
-    const token = jwt.sign({ _id }, JWT_SECRET, {
+    const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
 
