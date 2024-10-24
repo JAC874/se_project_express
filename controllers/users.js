@@ -41,7 +41,7 @@ const createUser = async (req, res, next) => {
     });
 
     // Exclude the password from the response
-    const { password: pwd, ...userWithoutPassword } = newUser.toObject();
+    const { ...userWithoutPassword } = newUser.toObject();
 
     return res.status(201).send({ data: userWithoutPassword });
   } catch (err) {
@@ -89,10 +89,10 @@ const login = async (req, res, next) => {
 };
 
 const getCurrentUser = (req, res, next) => {
-  const userId = req.user._id;
+  const { _id } = req.user; // Destructure _id from req.user
 
   // Find the user by ID and exclude the password field
-  User.findById(userId)
+  User.findById(_id)
     .select("-password")
     .orFail(() => new NotFoundError(ERROR_MESSAGES.NOT_FOUND))
     .then((user) => res.send(user))
@@ -105,7 +105,7 @@ const getCurrentUser = (req, res, next) => {
 };
 
 const updateUser = (req, res, next) => {
-  const userId = req.user._id;
+  const { _id } = req.user; // Destructure _id from req.user
   const { name, avatar } = req.body;
 
   // Prepare the updates object
@@ -114,7 +114,7 @@ const updateUser = (req, res, next) => {
   if (avatar) updates.avatar = avatar;
 
   // Update the user and validate the changes
-  User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true })
+  User.findByIdAndUpdate(_id, updates, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         return next(new NotFoundError(ERROR_MESSAGES.NOT_FOUND));
