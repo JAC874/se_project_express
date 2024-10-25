@@ -23,12 +23,6 @@ const createUser = async (req, res, next) => {
   }
 
   try {
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return next(new ConflictError(ERROR_MESSAGES.EMAIL_EXISTS));
-    }
-
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -40,7 +34,7 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    // Exclude the password from the response
+    // Exclude password from the returned user data
     const { password: pwd, ...userWithoutPassword } = newUser.toObject();
 
     return res.status(201).send({ data: userWithoutPassword });
