@@ -35,7 +35,8 @@ const createUser = async (req, res, next) => {
     });
 
     // Exclude password from the returned user data
-    const { password: pwd, ...userWithoutPassword } = newUser.toObject();
+    const userWithoutPassword = newUser.toObject();
+    delete userWithoutPassword.password;
 
     return res.status(201).send({ data: userWithoutPassword });
   } catch (err) {
